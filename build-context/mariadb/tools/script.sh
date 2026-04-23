@@ -3,8 +3,8 @@
     # user_pw=$(cat /run/secrets/db_password)
     # root_pw=$(cat /run/secrets/db_root_password)
 
+mariadb-install-db --user=mysql --datadir=/var/lib/mysql
 if [ ! -d /var/lib/mysql/$MARIADB_DATABASE ]; then
-    mariadb-install-db --user=mysql --datadir=/var/lib/mysql
 
     # Create the SQL file
     cat << EOF > /tmp/init.sql

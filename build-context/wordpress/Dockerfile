@@ -4,9 +4,8 @@ RUN apt-get update && apt-get install -y wget tar php8.2-fpm php8.2-mysql mariad
     && mkdir -p /var/www/ && cd /var/www/ && wget https://wordpress.org/latest.tar.gz \
     && tar -xzvf latest.tar.gz && rm -rf latest.tar.gz
 
-RUN chown -R root:root /var/www/wordpress
-# RUN chown -R www-data:www-data /var/www/wordpress
-# RUN chown -R www-data:www-data /var/www/html/wordpress
+# RUN chown -R root:root /var/www/wordpress
+RUN chown -R www-data:www-data /var/www/wordpress
 
 COPY conf/www.conf /etc/php/8.2/fpm/pool.d/.
 
