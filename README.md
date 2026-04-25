@@ -17,5 +17,6 @@ This project establishes a working WordPress website served by NGINX with TLS, u
 
 ## What is Docker and Why Use It?
 Docker is a platform that packages applications and all their required dependencies into lightweight, isolated environments called containers.
-> [!NOTE] Why it is used in this project: It ensures our infrastructure is modular and secure by isolating NGINX, WordPress, and MariaDB into their own environments.
+> [!WARNING]
+> Why it is used in this project: It ensures our infrastructure is modular and secure by isolating NGINX, WordPress, and MariaDB into their own environments.
 
