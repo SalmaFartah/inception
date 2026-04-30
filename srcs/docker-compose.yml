@@ -29,6 +29,11 @@ services:
       - my-network
     secrets:
       - db_password
+<<<<<<< HEAD:srcs/docker-compose.yml
+=======
+      - wp_pass
+      - wp_adm_pass
+>>>>>>> structured:srcs/docker-compose.yml
     # restart: always
 
   mariadb:
@@ -62,8 +67,21 @@ volumes:
 networks:
   my-network:
     driver: bridge
+<<<<<<< HEAD:srcs/docker-compose.yml
 secrets:
     db_password:
       file: ../secrets/db_password.txt
     db_root_password:
       file: ../secrets/db_root_password.txt
+=======
+
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  wp_pass:
+    file: ../secrets/wp_pass.txt
+  wp_adm_pass:
+    file: ../secrets/wp_admin_pass.txt
+>>>>>>> structured:srcs/docker-compose.yml
