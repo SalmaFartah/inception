@@ -13,8 +13,8 @@ services:
     depends_on:
       - wordpress
     networks:
-      - my-network
-    # restart: always
+      - inception
+    restart: always
   
   wordpress:
     build: requirements/wordpress
@@ -24,17 +24,17 @@ services:
      - wordpress:/var/www/html  # Use the named volume
     env_file: .env
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
-      - my-network
+      - inception
     secrets:
       - db_password
-<<<<<<< HEAD:srcs/docker-compose.yml
-=======
       - wp_pass
       - wp_adm_pass
->>>>>>> structured:srcs/docker-compose.yml
-    # restart: always
+    restart: always
 
   mariadb:
     build: requirements/mariadb
@@ -44,12 +44,82 @@ services:
      - mariadb:/var/lib/mysql
     env_file: .env
     networks:
-      - my-network
+      - inception
     secrets:
       - db_password
       - db_root_password
-    # restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: always
 
+#######  BONUSS PART ###########
+  redis:
+    build: ./requirements/bonus/redis
+    image: redis
+    container_name: redis
+    networks:
+      - inception
+    restart: always
+
+  adminer:
+    build: ./requirements/bonus/adminer
+    image: adminer
+    container_name: adminer
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+    ports:
+      - "8080:8080"
+    restart: always
+
+  static_site:
+    build: ./requirements/bonus/static_site
+    image: static_site
+    container_name: static_site
+    networks:
+      - inception
+    ports:
+      - "3000:3000"
+    restart: always
+    
+  ftp:
+    build: ./requirements/bonus/ftp
+    image: ftp
+    container_name: ftp
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    env_file: .env
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    volumes:
+      - wordpress:/var/www/html
+    restart: always
+
+  portainer:
+    build: requirements/bonus/portainer
+    container_name: portainer
+    image: portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - inception
+    secrets:
+      - portainer_pass
+    restart: always
+
+
+#######  VOLUMES #####
 volumes:
   wordpress: # This is the named volume
     driver: local
@@ -63,18 +133,15 @@ volumes:
       type: 'none'
       o: 'bind'
       device: '/home/sfartah/data/mariadb'
+  portainer_data:
+    driver: local
 
+#######  NETWORKS #####
 networks:
-  my-network:
+  inception:
     driver: bridge
-<<<<<<< HEAD:srcs/docker-compose.yml
-secrets:
-    db_password:
-      file: ../secrets/db_password.txt
-    db_root_password:
-      file: ../secrets/db_root_password.txt
-=======
 
+#######  SECRETS #####
 secrets:
   db_password:
     file: ../secrets/db_password.txt
@@ -84,4 +151,5 @@ secrets:
     file: ../secrets/wp_pass.txt
   wp_adm_pass:
     file: ../secrets/wp_admin_pass.txt
->>>>>>> structured:srcs/docker-compose.yml
+  portainer_pass:
+    file: ../secrets/portainer_pass.txt
