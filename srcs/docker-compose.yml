@@ -1,0 +1,157 @@
+name: 'inception'
+
+services:
+  nginx:
+    build: requirements/nginx
+    image: nginx
+    container_name: nginx
+    volumes:
+     - wordpress:/var/www/html  # Use the named volume
+    ports:
+      - "443:443"
+    env_file: .env
+    depends_on:
+      - wordpress
+    networks:
+      - inception
+    restart: always
+  
+  wordpress:
+    build: requirements/wordpress
+    image: wordpress
+    container_name: wordpress
+    volumes:
+     - wordpress:/var/www/html  # Use the named volume
+    env_file: .env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - inception
+    secrets:
+      - db_password
+      - wp_pass
+      - wp_adm_pass
+    restart: always
+
+  mariadb:
+    build: requirements/mariadb
+    image: mariadb
+    container_name: mariadb
+    volumes:
+     - mariadb:/var/lib/mysql
+    env_file: .env
+    networks:
+      - inception
+    secrets:
+      - db_password
+      - db_root_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+#######  BONUSS PART ###########
+  redis:
+    build: ./requirements/bonus/redis
+    image: redis
+    container_name: redis
+    networks:
+      - inception
+    restart: always
+
+  adminer:
+    build: ./requirements/bonus/adminer
+    image: adminer
+    container_name: adminer
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+    ports:
+      - "8080:8080"
+    restart: always
+
+  static_site:
+    build: ./requirements/bonus/static_site
+    image: static_site
+    container_name: static_site
+    networks:
+      - inception
+    ports:
+      - "3000:3000"
+    restart: always
+    
+  ftp:
+    build: ./requirements/bonus/ftp
+    image: ftp
+    container_name: ftp
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    env_file: .env
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    volumes:
+      - wordpress:/var/www/html
+    restart: always
+
+  portainer:
+    build: requirements/bonus/portainer
+    container_name: portainer
+    image: portainer
+    ports:
+      - "9000:9000"
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - inception
+    secrets:
+      - portainer_pass
+    restart: always
+
+
+
+#######  VOLUMES #####
+volumes:
+  wordpress: # This is the named volume
+    driver: local
+    driver_opts:   # Here are the custom options for the driver
+      type: 'none'
+      o: 'bind'
+      device: '/home/sfartah/data/wordpress'
+  mariadb: # This is the named volume
+    driver: local
+    driver_opts:   # Here are the custom options for the driver
+      type: 'none'
+      o: 'bind'
+      device: '/home/sfartah/data/mariadb'
+  portainer_data:
+    driver: local
+
+#######  NETWORKS #####
+networks:
+  inception:
+    driver: bridge
+
+#######  SECRETS #####
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  wp_pass:
+    file: ../secrets/wp_pass.txt
+  wp_adm_pass:
+    file: ../secrets/wp_admin_pass.txt
+  portainer_pass:
+    file: ../secrets/portainer_pass.txt
